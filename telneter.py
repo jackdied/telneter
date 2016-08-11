@@ -1,7 +1,7 @@
 ''' Parse telnet streams and keep telnet session state '''
 
 # import some telnet negotiation constants
-from telnetlib import IAC, DONT, DO, WONT, WILL, SE, NOP, GA, SGA, SB, ECHO, EOR, AYT, NAWS, TTYPE
+from telnetlib import IAC, DONT, DO, WONT, WILL, SE, NOP, GA, SGA, SB, ECHO, EOR, AYT, NAWS, TTYPE, STATUS
 TELOPT_EOR = chr(239)
 # a couple standard ones used in TTYPE
 SEND = chr(1)
@@ -12,13 +12,10 @@ MCCP1 = chr(85)  # Mud Compression Protocol, v1 (broken and not supported here)
 MSP = chr(90) # Mud Sound Protocol
 MXP = chr(91) # Mud eXtension Protocol
 
-# byte to display name
-byte_names = {IAC:'IAC',DONT:'DONT',DO:'DO',WILL:'WILL',WONT:'WONT',SE:'SE',NOP:'NOP',GA:'GA',SB:'SB',ECHO:'ECHO',EOR:'EOR',
-              MCCP2:'MCCP2', MCCP1:'MCCP1', AYT:'AYT', NAWS:'NAWS', TTYPE:'TTYPE', MSP:'MSP', MXP:'MXP',TELOPT_EOR:'TELOPT_EOR',
-             }
-def trans(val):
-    return nego_names.get(val, repr(val))
+val_to_name = {IAC:'IAC',DONT:'DONT',DO:'DO',WILL:'WILL',WONT:'WONT',SE:'SE',NOP:'NOP',GA:'GA',SB:'SB',ECHO:'ECHO',EOR:'EOR',
+               MCCP2:'MCCP2', MCCP1:'MCCP1', AYT:'AYT', NAWS:'NAWS', TTYPE:'TTYPE', MSP:'MSP', MXP:'MXP',TELOPT_EOR:'TELOPT_EOR'}
 
+# TODO: rename IAC_escape to plain escape()?
 
 def clean_data(data):
     """ the old telnetlib does this, I'm not sure why """
@@ -53,7 +50,7 @@ def parse(data):
     # IAC hiding in there
     if iac_ind:  # not at zero, return the data first
         text_data = data[:iac_ind]
-        unparsed = self.buffer[iac_ind:]
+        unparsed = data[iac_ind:]
         return None, text_data, unparsed
 
     # okie, we have an IAC at position zero.  do some work.
@@ -74,6 +71,8 @@ def parse(data):
             return (cmd, None, b''), b'', unparsed
         else:
             # parse the SB payload
+            option = data[i]
+            i += 1
             while True:
                 if data[i] == IAC:
                     if data[i+1] == SE:
