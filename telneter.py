@@ -86,24 +86,7 @@ def first_unescaped_IACSE(haystack):
     ''' find the first IAC+SE in haystack
         while being mindful that IAC+IAC means an escaped IAC
     '''
-    # find the IAC+SE then increment backwards
-    iacse_i = data.find(IAC+SE)
-    if iacse_i == 0:
-        return iacse_i
-
-    try:
-        while iacse_i >= 0:
-            i = iacse_i - 1
-            while data[i] == IAC:
-                i -= 1
-            if not (end - i) % 2:  # even number of preceding IACS
-                return iacse_i
-            else:
-                iacse_i = data.find(IAC+SE, iacse_i+1)
-    except IndexError:
-        pass
-    return -1
-
+    return find_IACSE.find_simple3(haystack)
 
 # [1] RFC 855
 # if parameters in an option "subnegotiation" include a byte
