@@ -1,5 +1,6 @@
 ''' Parse telnet streams and keep telnet session state '''
 
+import re
 # import some telnet negotiation constants
 from telnetlib import IAC, DONT, DO, WONT, WILL, SE, NOP, GA, SGA, SB, ECHO, EOR, AYT, NAWS, TTYPE, STATUS
 TELOPT_EOR = chr(239)
@@ -62,37 +63,47 @@ def parse(data):
         if cmd == IAC:  # escaped IAC
             unparsed = data[i:]
             return None, IAC, unparsed
-        elif cmd in [DO, DONT, WILL, WONT]:
+        elif cmd != SB:
             option = data[i]
             unparsed = data[i+1:]
             return (cmd, option, b''), b'', unparsed
-        elif cmd != SB:
-            # do all other commands not take an option by definition? Uck.
-            return (cmd, None, b''), b'', unparsed
         else:
             # parse the SB payload
             option = data[i]
             i += 1
-            while True:
-                if data[i] == IAC:
-                    if data[i+1] == SE:
-                        i += 2
-                        break
-                    elif data[i+1] == IAC:  # escaped IAC (see [1])
-                        i += 2
-                    else:
-                        i += 1
-                else:
-                    i += 1
-            sb_data = data[3:i-2] # IAC SB OPTION <data> IAC SE
+            i = first_unescaped_IACSE(data)
+            sb_data = data[3:i] # IAC SB OPTION <data> IAC SE
             sb_data = sb_data.replace(IAC+IAC, IAC)  # fixup escaped IACs, if any
-            unparsed = data[i:]
+            unparsed = data[i+2:]
             return (cmd, option, sb_data), b'', unparsed
     except IndexError: 
         # we didn't have the full IAC sequence, try again later
         return None, b'', data
 
     raise RuntimeError("Unreachable")
+
+def first_unescaped_IACSE(haystack):
+    ''' find the first IAC+SE in haystack
+        while being mindful that IAC+IAC means an escaped IAC
+    '''
+    # find the IAC+SE then increment backwards
+    iacse_i = data.find(IAC+SE)
+    if iacse_i == 0:
+        return iacse_i
+
+    try:
+        while iacse_i >= 0:
+            i = iacse_i - 1
+            while data[i] == IAC:
+                i -= 1
+            if not (end - i) % 2:  # even number of preceding IACS
+                return iacse_i
+            else:
+                iacse_i = data.find(IAC+SE, iacse_i+1)
+    except IndexError:
+        pass
+    return -1
+
 
 # [1] RFC 855
 # if parameters in an option "subnegotiation" include a byte
