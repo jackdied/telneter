@@ -1,6 +1,7 @@
 ''' Parse telnet streams and keep telnet session state '''
 
 import re
+import find_IACSE
 # import some telnet negotiation constants
 from telnetlib import IAC, DONT, DO, WONT, WILL, SE, NOP, GA, SGA, SB, ECHO, EOR, AYT, NAWS, TTYPE, STATUS
 TELOPT_EOR = chr(239)
@@ -86,6 +87,7 @@ def first_unescaped_IACSE(haystack):
     ''' find the first IAC+SE in haystack
         while being mindful that IAC+IAC means an escaped IAC
     '''
+    # use the simple & fast (in the usual case) version that doesn't do an in memory copy.
     return find_IACSE.find_simple3(haystack)
 
 # [1] RFC 855

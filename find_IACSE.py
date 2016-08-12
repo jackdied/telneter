@@ -26,7 +26,7 @@ from __future__ import print_function
 from itertools import izip
 import re
 import time
-from telneter import IAC, SB, SE, STATUS
+from telnetlib import IAC, SB, SE, STATUS
 
 
 all_finders = []
