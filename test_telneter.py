@@ -1,6 +1,9 @@
+from __future__ import print_function
+
 import mock
 import unittest
 import telneter
+import find_IACSE
 from telneter import IAC, SB, SE, WILL, WONT, DO, DONT, STATUS
 
 
@@ -48,9 +51,33 @@ class TelnetParser(unittest.TestCase):
                           (None, 'after', b'')],
                          multi_parse(b'before' + IAC+WILL+STATUS + 'after'))
 
-    def test_parse_sb(self):
+    def test_find_IACSE(self):
+        for func in find_IACSE.all_finders:
+            #print(func)
+            self.assertEqual(-1, func(b''))
+            self.assertEqual(0, func(IAC+SE))
+            #                        ^^^^^^
+            self.assertEqual(-1, func(IAC+IAC+SE))
+
+            self.assertEqual(3, func(IAC+IAC+SE+IAC+SE))
+            #                                   ^^^^^^
+            self.assertEqual(2, func(IAC+IAC+IAC+SE))
+            #                                ^^^^^^
+            data = IAC+SB+STATUS+'xxx'+IAC+IAC+'xxx'+IAC+IAC + IAC+SE
+            #                                                  ^^^^^^
+            self.assertEqual(13, func(data))
+            self.assertEqual(6, func(IAC+IAC+SE+'xxx'+IAC+SE))
+            #                                         ^^^^^^
+            self.assertEqual(9, func(IAC+IAC+SE+'xxx'+IAC+IAC+SE+IAC+SE))
+            #                                                    ^^^^^^
+            self.assertEqual(6, func(IAC+IAC+SE+'xxx'+IAC+SE+IAC+SE))
+            #                                         ^^^^^^
+
+    def _test_parse_sb(self):
         self.assertEqual([((SB, STATUS, 'payload'), b'', b'')],
                          multi_parse(IAC+SB+STATUS + 'payload' + IAC+SE))
+        self.assertEqual([((SB, STATUS, 'payload'), b'', b'')],
+                         multi_parse(IAC+SB+STATUS + 'payload'+IAC+IAC + IAC+SE))
         self.assertEqual([((SB, STATUS, 'pay'+IAC+'load'), b'', b'')],
                          multi_parse(IAC+SB+STATUS + 'pay'+IAC+IAC+'load' + IAC+SE))
         self.assertEqual([((SB, STATUS, 'pay'+IAC+SE+'load'), b'', b'')],
@@ -58,3 +85,6 @@ class TelnetParser(unittest.TestCase):
         big_payload = 'x' * 1024 *1024
         self.assertEqual([((SB, STATUS, big_payload), b'', b'')],
                          multi_parse(IAC+SB+STATUS + big_payload + IAC+SE))
+    
+                
+                
