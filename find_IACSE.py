@@ -34,6 +34,13 @@ def register_finder(func):
     all_finders.append(func)
     return func
 
+
+# RFC 855
+# if parameters in an option "subnegotiation" include a byte
+# with a value of IAC, it is necessary to double this byte in
+# accordance the general TELNET rules.
+
+
 @register_finder
 def find_simple(data):
     ''' The original (and slow) function.
