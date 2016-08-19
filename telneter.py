@@ -189,9 +189,17 @@ class TelnetState(object):
         return construct_control(SB, STATUS+IS, payload)
 
     def __repr__(self):
-        return '<%s at %d state=%r>' % (self.__class__.__name__,
-                                        id(self),
-                                        {val_to_name[opt]: val_to_name[v] for opt, v in self.options.items()})
+        current_options = {val_to_name[opt]: val_to_name[v] for opt, v in self.options.items()}
+        cp = self.handlers.copy()
+        default = cp.pop('default', None)
+        current_handlers = {val_to_name[opt]: v.__name__ for opt, v in cp.items()}
+        current_handlers['default'] = default.__name__                         
+        return '<%s at %d state=%r handlers=%r>' % (self.__class__.__name__,
+                                                    id(self),
+                                                    current_options,
+                                                    current_handlers)
+                                                    
+                                                    
 
 
 class TelnetStream(object):
