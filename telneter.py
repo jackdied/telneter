@@ -21,7 +21,7 @@ for k, v in locals().items():
             val_to_name[v] = k
     except (ValueError, TypeError):
         pass
-
+val_to_name[ECHO] = 'ECHO'  # TODO, double check 'SEND' == 0x01
 
 def clean_data(data):
     """ the old telnetlib does this, I'm not sure why """
@@ -187,6 +187,11 @@ class TelnetState(object):
         for option, status in sorted(self.options.items()):
             payload += status + option  # e.g. WILL+ECHO
         return construct_control(SB, STATUS+IS, payload)
+
+    def __repr__(self):
+        return '<%s at %d state=%r>' % (self.__class__.__name__,
+                                        id(self),
+                                        {val_to_name[opt]: val_to_name[v] for opt, v in self.options.items()})
 
 
 class TelnetStream(object):
