@@ -14,6 +14,7 @@ def multi_parse(data):
         data = parses[-1][-1]
     return parses
 
+
 class TelnetParser(unittest.TestCase):
     def test_IAC_escapes(self):
         IAC = telneter.IAC
